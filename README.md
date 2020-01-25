@@ -22,6 +22,10 @@ This tap:
     ```bash
     > pip install tap-circle-ci
     ```
+    or for the bleeding edge version:
+    ```bash
+    git clone git@github.com:sisudata/tap-circle-ci.git && cd tap-circle-ci && pip install -e .
+    ```
 
 2. Create a Circle CI access token
 

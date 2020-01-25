@@ -1,9 +1,13 @@
-import requests
+from requests import Session
 import singer
 import singer.metrics as metrics
 
 
-session = requests.Session()
+_session = Session()
+# wrapper to make mocking easier
+def get_session():
+    return _session
+
 logger = singer.get_logger()
 
 
@@ -11,7 +15,7 @@ def add_authorization_header(token: str) -> None:
     """
     Adds authorization header
     """
-    session.headers.update({'Circle-Token': token})
+    get_session().headers.update({'Circle-Token': token})
 
 
 def add_next_page_to_url(url: str, next_page_token: str) -> str:
@@ -21,13 +25,20 @@ def add_next_page_to_url(url: str, next_page_token: str) -> str:
     return url + '?page-token=' + next_page_token
 
 
+class AuthException(Exception):
+    pass
+
+class NotFoundException(Exception):
+    pass
+
+
 def get(source: str, url: str, headers: dict={}):
     """
     Get a single page from the provided url
     """
     with metrics.http_request_timer(source) as timer:
-        session.headers.update(headers)
-        resp = session.request(method='get', url=url)
+        get_session().headers.update(headers)
+        resp = get_session().request(method='get', url=url)
         if resp.status_code == 401:
             raise AuthException(resp.text)
         if resp.status_code == 403:
@@ -49,7 +60,7 @@ def get_all_pages(source: str, url: str, headers: dict={}):
         if data.get('next_page_token') is not None:
             temp_url = add_next_page_to_url(url, data.get('next_page_token'))
         else:
-            session.headers.pop("next_page_token", None)
+            get_session().headers.pop("next_page_token", None)
             break
 
 
