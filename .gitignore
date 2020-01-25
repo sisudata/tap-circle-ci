@@ -1,0 +1,6 @@
+*.egg-info/
+*.egg
+
+sample_config.json
+catalog.json
+
