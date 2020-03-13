@@ -20,7 +20,7 @@ setup(
     tap-circle-ci=tap_circle_ci:main
     """,
     packages=["tap_circle_ci"],
-    package_data = {
+    package_data={
         "schemas": ["tap_circle_ci/schemas/*.json"]
     },
     include_package_data=True,
