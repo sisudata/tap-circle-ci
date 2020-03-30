@@ -37,7 +37,7 @@ This tap:
 
     ```json
     {
-      "circle_ci_token": "your-access-token",
+      "token": "your-access-token",
       "project_slugs": "gh/singer-io/singer-python gh/singer-io/getting-started"
     }
     ```
