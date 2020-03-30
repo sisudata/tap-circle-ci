@@ -36,15 +36,16 @@ def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict) 
     workflow_counter = metrics.record_counter('workflows') if schemas.get('workflows') else None
     job_counter = metrics.record_counter('jobs') if schemas.get('jobs') else None
     extraction_time = singer.utils.now()
+    extraction_time_minus_buffer = extraction_time - TIME_BUFFER_FOR_RUNNING_PIPELINES
     for pipeline in get_all_items('pipelines', pipeline_url):
 
         # We leave a buffer before extracting a pipeline as a hack to avoid extracting currently running pipelines
-        if extraction_time - TIME_BUFFER_FOR_RUNNING_PIPELINES < singer.utils.strptime_to_utc(pipeline.get('updated_at')):
+        if extraction_time_minus_buffer < singer.utils.strptime_to_utc(pipeline.get('updated_at')):
             continue
 
         # break if the updated time of the pipeline is less than our bookmark_time
         if bookmark_time is not None and  singer.utils.strptime_to_utc(pipeline.get('updated_at')) < bookmark_time:
-            singer.write_bookmark(state, project, 'pipelines', {'since': singer.utils.strftime(extraction_time)})
+            singer.write_bookmark(state, project, 'pipelines', {'since': singer.utils.strftime(extraction_time_minus_buffer)})
             return state
 
         # Transform and write record

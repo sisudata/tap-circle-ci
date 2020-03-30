@@ -87,12 +87,12 @@ This tap:
     `tap-circle-ci` can be run with:
 
     ```bash
-    tap-github --config config.json --catalog catalog.json
+    tap-circle-ci --config config.json --catalog catalog.json
     ```
 
     To save output to a file:
     ```bash
-    tap-github --config config.json --catalog catalog.json > output.txt
+    tap-circle-ci --config config.json --catalog catalog.json > output.txt
     ```
     It is our intention that this singer tap gets used with a singer target, which will load the output into a database.
     More information on singer targets [here](https://github.com/singer-io/getting-started/blob/master/docs/RUNNING_AND_DEVELOPING.md#running-a-singer-tap-with-a-singer-target).

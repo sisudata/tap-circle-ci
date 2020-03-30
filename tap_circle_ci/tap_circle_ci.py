@@ -12,7 +12,7 @@ from tap_circle_ci.streams import (TOP_LEVEL_STREAM_ID_TO_FUNCTION,
                                                             validate_stream_dependencies)
 from tap_circle_ci.client import add_authorization_header
 
-REQUIRED_CONFIG_KEYS = ["circle_ci_token", "project_slugs"]
+REQUIRED_CONFIG_KEYS = ["token", "project_slugs"]
 LOGGER = singer.get_logger()
 
 def get_abs_path(path: str) -> str:
@@ -91,7 +91,7 @@ def sync(config: dict, state: dict, catalog: dict) -> None:
     Syncs all projects
     """
     projects = list(filter(None, config['project_slugs'].split(' ')))
-    add_authorization_header(config['circle_ci_token'])
+    add_authorization_header(config['token'])
     for project in projects:
         LOGGER.info(f'Syncing project {project}')
         sync_single_project(project, state, catalog)
