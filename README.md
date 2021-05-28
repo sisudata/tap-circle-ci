@@ -9,8 +9,8 @@ This tap:
 - Pulls raw data from [Circle CI](https://circleci.com/)
 - Extracts the following resources:
   - [Pipelines](https://circleci.com/docs/api/v2/#get-all-pipelines)
-  - [Workflows](https://circleci.com/docs/api/v2/#get-a-pipeline-39-s-workflows)
-  - [Jobs](https://circleci.com/docs/api/v2/#get-a-workflow-39-s-jobs)
+  - [Workflows](https://circleci.com/docs/api/v2/#operation/listWorkflowsByPipelineId)
+  - [Jobs](https://circleci.com/docs/api/v2/#operation/listWorkflowJobs)
 - Outputs the schema for each resource
 - Incrementally pulls data based on the input state
 
