@@ -5,8 +5,11 @@ import singer.metrics as metrics
 
 _session = Session()
 # wrapper to make mocking easier
+
+
 def get_session():
     return _session
+
 
 logger = singer.get_logger()
 
@@ -28,11 +31,12 @@ def add_next_page_to_url(url: str, next_page_token: str) -> str:
 class AuthException(Exception):
     pass
 
+
 class NotFoundException(Exception):
     pass
 
 
-def get(source: str, url: str, headers: dict={}):
+def get(source: str, url: str, headers: dict = {}):
     """
     Get a single page from the provided url
     """
@@ -50,7 +54,7 @@ def get(source: str, url: str, headers: dict={}):
         return resp
 
 
-def get_all_pages(source: str, url: str, headers: dict={}):
+def get_all_pages(source: str, url: str, headers: dict = {}):
     temp_url = str(url)
     while True:
         r = get(source, temp_url, headers)
@@ -64,7 +68,7 @@ def get_all_pages(source: str, url: str, headers: dict={}):
             break
 
 
-def get_all_items(source: str, url: str, headers: dict={}):
+def get_all_items(source: str, url: str, headers: dict = {}):
     """
     Each page contains a bunch of items, so this function extracts the items one by one
     """
