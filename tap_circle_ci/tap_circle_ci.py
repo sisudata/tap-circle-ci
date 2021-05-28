@@ -100,10 +100,10 @@ def sync(config: dict, state: dict, catalog: dict) -> None:
     add_authorization_header(config['token'])
     for project in projects:
         LOGGER.info(f'Syncing project {project}')
-        sync_single_project(project, state, catalog)
+        sync_single_project(project, state, catalog, config)
 
 
-def sync_single_project(project: str, state: dict, catalog: singer.catalog.Catalog) -> None:
+def sync_single_project(project: str, state: dict, catalog: singer.catalog.Catalog, options: dict) -> None:
     """
     Sync a single project's streams
     """
@@ -147,7 +147,7 @@ def sync_single_project(project: str, state: dict, catalog: singer.catalog.Catal
                                             sub_stream.key_properties)
 
             # sync stream and it's sub streams
-            state = sync_func(stream_schemas, project, state, all_metadata)
+            state = sync_func(stream_schemas, project, state, all_metadata, options)
             singer.write_state(state)
 
 

@@ -23,7 +23,7 @@ def get_bookmark(state: dict, project: str, stream_name: str, bookmark_key: str)
     return None
 
 
-def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict) -> dict:
+def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict, options: dict = {}) -> dict:
     """
     https://circleci.com/docs/api/v2/#get-all-pipelines
     """
@@ -40,7 +40,13 @@ def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict) 
     job_counter = metrics.record_counter(
         'jobs') if schemas.get('jobs') else None
     extraction_time = singer.utils.now()
-    extraction_time_minus_buffer = extraction_time - TIME_BUFFER_FOR_RUNNING_PIPELINES
+
+    time_buffer = TIME_BUFFER_FOR_RUNNING_PIPELINES
+    if "time_buffer_mins" in options:
+        time_buffer = datetime.timedelta(minutes=options["time_buffer_mins"])
+
+    extraction_time_minus_buffer = extraction_time - time_buffer
+
     for pipeline in get_all_items('pipelines', pipeline_url):
 
         # We leave a buffer before extracting a pipeline as a hack to avoid extracting currently running pipelines

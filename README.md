@@ -28,7 +28,7 @@ This tap:
    [Personal API Tokens](https://circleci.com/account/api)
    page, and generate a new token. Copy the token and save it somewhere safe.
 
-3. Create the config file
+3. Create the config file (see below)
 
    Create a JSON file containing the token you just created as well as the project slug to the project you want to extract data from. Retrieve the project slug
    from the url for a workflow - it should be the VCS your project uses (`gh` for Github or `bb` for Bitbucket), followed by the owner or organization, followed by the repository name
@@ -102,6 +102,16 @@ This tap:
 
    It is our intention that this singer tap gets used with a singer target, which will load the output into a database.
    More information on singer targets [here](https://github.com/singer-io/getting-started/blob/master/docs/RUNNING_AND_DEVELOPING.md#running-a-singer-tap-with-a-singer-target).
+
+## Configuration
+
+Detailed configuration information for the `--config` key.
+
+| key                | type      | default | description                                                                                     |
+| ------------------ | --------- | ------- | ----------------------------------------------------------------------------------------------- |
+| `token`            | `string`  | `N/A`   | [Personal API Token](https://circleci.com/account/api)                                          |
+| `project_slugs`    | `string`  | `N/A`   | Space ` ` delimited string of CCI project slugs                                                 |
+| `time_buffer_mins` | `integer` | 7 days  | A buffer to offset when we start syncing `pipelines` to prevent syncing in progress `pipelines` |
 
 ---
 
