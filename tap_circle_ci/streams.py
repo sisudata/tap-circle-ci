@@ -82,7 +82,7 @@ def get_all_workflows_for_pipeline(
         job_counter: Optional[metrics.Counter] = None
     ) -> dict:
     """
-    https://circleci.com/docs/api/v2/#get-a-pipeline-39-s-workflows
+    https://circleci.com/docs/api/v2/#operation/listWorkflowsByPipelineId
     """
     if workflow_counter is None:
         workflow_counter = metrics.record_counter('workflows')
@@ -114,7 +114,7 @@ def get_all_jobs_for_workflow(
         job_counter: Optional[metrics.Counter] = None
     ) -> dict:
     """
-    https://circleci.com/docs/api/v2/#get-a-workflow-39-s-jobs
+    https://circleci.com/docs/api/v2/#operation/listWorkflowJobs
     """
 
     if job_counter is None:
