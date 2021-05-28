@@ -122,33 +122,33 @@ def sync_single_project(project: str, state: dict, catalog: singer.catalog.Catal
             # if stream is selected, write schema and sync
             stream_schema = stream.schema
             all_metadata = {stream_id: stream.metadata}
-            if stream_id in selected_stream_ids:
-                singer.write_schema(
-                    stream_id, stream_schema.to_dict(), stream.key_properties)
 
-                # get sync function and any sub streams
-                sync_func = TOP_LEVEL_STREAM_ID_TO_FUNCTION[stream_id]
-                sub_stream_ids = extract_sub_stream_ids(stream_id)
+            singer.write_schema(
+                stream_id, stream_schema.to_dict(), stream.key_properties)
 
-                # handle streams with sub streams
-                if len(sub_stream_ids) > 0:
-                    stream_schemas = {stream_id: stream_schema}
+            # get sync function and any sub streams
+            sync_func = TOP_LEVEL_STREAM_ID_TO_FUNCTION[stream_id]
+            sub_stream_ids = extract_sub_stream_ids(stream_id)
 
-                    # get and write selected sub stream schemas
-                    for sub_stream_id in sub_stream_ids:
-                        if sub_stream_id in selected_stream_ids:
-                            LOGGER.info(
-                                f'Syncing substream: {sub_stream_id} (descendent of {stream_id})')
-                            sub_stream = next(
-                                s for s in catalog.streams if s.tap_stream_id == sub_stream_id)
-                            stream_schemas[sub_stream_id] = sub_stream.schema
-                            all_metadata[sub_stream_id] = sub_stream.metadata
-                            singer.write_schema(sub_stream_id, sub_stream.schema.to_dict(),
-                                                sub_stream.key_properties)
+            # handle streams with sub streams
+            if len(sub_stream_ids) > 0:
+                stream_schemas = {stream_id: stream_schema}
 
-                # sync stream and it's sub streams
-                state = sync_func(stream_schemas, project, state, all_metadata)
-                singer.write_state(state)
+                # get and write selected sub stream schemas
+                for sub_stream_id in sub_stream_ids:
+                    if sub_stream_id in selected_stream_ids:
+                        LOGGER.info(
+                            f'Syncing substream: {sub_stream_id} (descendent of {stream_id})')
+                        sub_stream = next(
+                            s for s in catalog.streams if s.tap_stream_id == sub_stream_id)
+                        stream_schemas[sub_stream_id] = sub_stream.schema
+                        all_metadata[sub_stream_id] = sub_stream.metadata
+                        singer.write_schema(sub_stream_id, sub_stream.schema.to_dict(),
+                                            sub_stream.key_properties)
+
+            # sync stream and it's sub streams
+            state = sync_func(stream_schemas, project, state, all_metadata)
+            singer.write_state(state)
 
 
 @utils.handle_top_exception(LOGGER)
