@@ -103,6 +103,29 @@ This tap:
    It is our intention that this singer tap gets used with a singer target, which will load the output into a database.
    More information on singer targets [here](https://github.com/singer-io/getting-started/blob/master/docs/RUNNING_AND_DEVELOPING.md#running-a-singer-tap-with-a-singer-target).
 
+7. To rerun using the last output `STATE` record:
+
+   In your output records, you will see something like:
+
+   ```json
+   {
+     "type": "STATE",
+     "value": {
+       "bookmarks": {
+         "gh/sisudata/tap-circle-ci": {
+           "pipelines": { "since": "2021-05-28T22:02:27.620127Z" }
+         }
+       }
+     }
+   }
+   ```
+
+   Select the `value` key, store it to a JSON file, and run:
+
+   ```bash
+   tap-circle-ci --config config.json --catalog catalog.json --state state.json
+   ```
+
 ## Configuration
 
 Detailed configuration information for the `--config` key.
