@@ -11,7 +11,7 @@ def get_session():
     return _session
 
 
-logger = singer.get_logger()
+LOGGER = singer.get_logger()
 
 
 def add_authorization_header(token: str) -> None:
@@ -73,5 +73,5 @@ def get_all_items(source: str, url: str, headers: dict = {}):
     Each page contains a bunch of items, so this function extracts the items one by one
     """
     for page in get_all_pages(source, url, headers):
-        for item in page["items"]:
+        for item in page.get("items", [page]):
             yield item
