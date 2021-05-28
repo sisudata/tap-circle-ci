@@ -7,6 +7,8 @@ import singer.bookmarks as bookmarks
 import singer.metrics as metrics
 from tap_circle_ci.client import get_all_items
 
+LOGGER = singer.get_logger()
+
 # We leave a week offset for currently running pipelines
 TIME_BUFFER_FOR_RUNNING_PIPELINES = datetime.timedelta(days=7)
 
@@ -99,7 +101,7 @@ def get_all_workflows_for_pipeline(
 
         # If jobs are selected, grab all the jobs for this workflow
         if schemas.get('jobs'):
-            state = get_all_jobs_for_workflow(schemas, pipeline_id, workflow.get("id"), project, state, metadata, job_counter)
+            state = get_all_jobs_for_workflow(schemas, pipeline_id, workflow, project, state, metadata, job_counter)
 
     return state
 
@@ -107,7 +109,7 @@ def get_all_workflows_for_pipeline(
 def get_all_jobs_for_workflow(
         schemas: dict,
         pipeline_id: str,
-        workflow_id: str,
+        workflow: dict,
         project: str,
         state: dict,
         metadata: dict,
@@ -116,6 +118,8 @@ def get_all_jobs_for_workflow(
     """
     https://circleci.com/docs/api/v2/#operation/listWorkflowJobs
     """
+
+    workflow_id = workflow.get("id")
 
     if job_counter is None:
         job_counter = metrics.record_counter('jobs')
@@ -133,6 +137,48 @@ def get_all_jobs_for_workflow(
         singer.write_record('jobs', record, time_extracted=extraction_time)
         job_counter.increment()
 
+        # If steps are selected, grab all the steps for this job
+        if schemas.get('steps') and job.get("type") == "build":
+            state = get_all_steps_for_job(
+                schemas,
+                pipeline_id,
+                workflow,
+                job,
+                state,
+                metadata
+            )
+
+    return state
+
+def get_all_steps_for_job(
+        schemas: dict,
+        pipeline_id: str,
+        workflow: dict,
+        job: dict,
+        state: dict,
+        metadata: dict
+    ) -> dict:
+    """
+    https://circleci.com/docs/api/#single-job
+    """
+
+    workflow_id = workflow.get("id")
+    slug = workflow.get("project_slug")
+    build_num = job.get("job_number")
+
+    build_url = f"https://circleci.com/api/v1.1/project/{slug}/{build_num}"
+    extraction_time = singer.utils.now()
+    for build in get_all_items('steps', build_url):
+        for idx, step in enumerate(build["steps"]):
+
+            # add in workflow_id, pipeline_id and job_id
+            step.update({'_pipeline_id': pipeline_id, '_workflow_id': workflow_id, '_job_id': workflow_id, '_index': idx})
+
+            # Transform and write
+            with singer.Transformer() as transformer:
+                record = transformer.transform(step, schemas['steps'].to_dict(), metadata=metadata_lib.to_map(metadata['steps']))
+            singer.write_record('steps', record, time_extracted=extraction_time)
+
     return state
 
 # The following is boiler-plate to help the main function map stream ids to the actual function to sync the stream
@@ -143,7 +189,8 @@ TOP_LEVEL_STREAM_ID_TO_FUNCTION = {
 
 STREAM_ID_TO_SUB_STREAM_IDS = {
     'pipelines': ['workflows'],
-    'workflows': ['jobs']
+    'workflows': ['jobs'],
+    'jobs': ['steps']
 }
 
 def validate_stream_dependencies(selected_stream_ids: List[str]) -> None:
