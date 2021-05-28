@@ -1,0 +1,45 @@
+version: 2.1
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test
+
+cache: &cache v0-{{ checksum "setup.py" }}
+
+jobs:
+  test:
+    docker:
+      - image: python:3.9.5-buster
+    working_directory: /code/
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - *cache
+
+      - run:
+          name: Install tap-circle-ci
+          command: |
+            python -m venv venv/tap-circle-ci
+            source venv/tap-circle-ci/bin/activate
+            pip install -e .[tests]
+            deactivate
+
+      - save_cache:
+          key: *cache
+          paths:
+            - "./venv"
+            - "/usr/local/bin"
+            - "/usr/local/lib/python3.9/site-packages"
+
+      - run:
+          name: Run Tests
+          command: |
+            source venv/tap-circle-ci/bin/activate
+            pytest --verbose
+
+      - store_artifacts:
+          path: target/test-results
+          destination: raw-test-output

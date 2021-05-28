@@ -11,10 +11,13 @@ setup(
     py_modules=["tap_circle_ci"],
     install_requires=[
         "singer-python>=5.0.12",
-        "requests",
-        "pytest",
-        "mock"
+        "requests"
     ],
+    extras_require={
+        'tests': [
+            "mock",
+            "pytest"
+        ]},
     entry_points="""
     [console_scripts]
     tap-circle-ci=tap_circle_ci:main

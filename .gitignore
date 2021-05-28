@@ -2,5 +2,6 @@
 *.egg
 __pycache__/
 
+venv/
 sample_config.json
 catalog.json
