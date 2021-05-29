@@ -37,10 +37,7 @@
       ]
     },
     "id": {
-      "type": [
-        "null",
-        "string"
-      ]
+      "type": "string"
     },
     "created_at": {
       "type": [
@@ -50,10 +47,8 @@
       "format": "date-time"
     },
     "pipeline_id": {
-      "type": [
-        "null",
-        "string"
-      ]
+      "type": "string"
     }
-  }
+  },
+  "required": ["pipeline_id", "id"]
 }

@@ -50,7 +50,7 @@ def discover() -> singer.catalog.Catalog:
             'tap_stream_id': schema_name,
             'schema': schema,
             'metadata': [],
-            'key_properties': []
+            'key_properties': schema.get('required', [])
         }
         streams.append(catalog_entry)
 

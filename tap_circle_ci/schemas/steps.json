@@ -3,13 +3,22 @@
   "additionalProperties": false,
   "properties": {
     "_pipeline_id": {
-      "type": ["null", "string"]
+      "type": "string"
     },
     "_workflow_id": {
-      "type": ["null", "string"]
+      "type": "string"
     },
     "_job_id": {
-      "type": ["null", "string"]
+      "type": "string"
+    },
+    "pipeline_id": {
+      "type": "string"
+    },
+    "workflow_id": {
+      "type": "string"
+    },
+    "job_id": {
+      "type": "string"
     },
     "_index": {
       "type": ["null", "integer"]
@@ -67,5 +76,6 @@
         }
       }
     }
-  }
+  },
+  "required": ["pipeline_id", "workflow_id", "job_id", "_index"]
 }
