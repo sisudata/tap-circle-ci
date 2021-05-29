@@ -11,6 +11,7 @@ This tap:
   - [Pipelines](https://circleci.com/docs/api/v2/#get-all-pipelines)
   - [Workflows](https://circleci.com/docs/api/v2/#operation/listWorkflowsByPipelineId)
   - [Jobs](https://circleci.com/docs/api/v2/#operation/listWorkflowJobs)
+  - [Steps](https://circleci.com/docs/api/#single-job)
 - Outputs the schema for each resource
 - Incrementally pulls data based on the input state
 
