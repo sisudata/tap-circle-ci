@@ -35,14 +35,23 @@ def generate_data_from_schema(schema: dict, num_shots: int, start_time: datetime
     time_copy = copy.deepcopy(start_time)
     return [_generate_single_data_point(schema, time_copy + datetime.timedelta(hours=i)) for i in range(num_shots)]
 
+def non_null_schema_types(schema):
+    types = None
+    if isinstance(schema['type'], str):
+        types = [schema['type']]
+    else:
+        types = schema['type']
+
+    return [t for t in types if t != 'null']
 
 def _generate_single_data_point(schema: dict, time: datetime.datetime) -> Union[dict, int, bool, str]:
-    if 'object' in schema.get('type'):
+    types = non_null_schema_types(schema)
+    if 'object' in types:
         return {k: _generate_single_data_point(v, time) for k, v in schema['properties'].items()}
-    if schema.get('format') is not None and 'string' in schema.get('type') and schema.get('format') == 'date-time':
+    elif 'string' in types and schema.get('format') == 'date-time':
         return singer.utils.strftime(time)
     else:
-        return _generate_random_field(next(t for t in schema.get('type') if t != 'null'))
+        return _generate_random_field(types[0])
 
 
 def pageify_data_points(data_points: List[dict], page_limit: int) -> List[dict]:
