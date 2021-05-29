@@ -8,7 +8,7 @@ This tap:
 
 - Pulls raw data from [Circle CI](https://circleci.com/)
 - Extracts the following resources:
-  - [Pipelines](https://circleci.com/docs/api/v2/#get-all-pipelines)
+  - [Pipelines](hhttps://circleci.com/docs/api/v2/#operation/listPipelines)
   - [Workflows](https://circleci.com/docs/api/v2/#operation/listWorkflowsByPipelineId)
   - [Jobs](https://circleci.com/docs/api/v2/#operation/listWorkflowJobs)
   - [Steps](https://circleci.com/docs/api/#single-job)

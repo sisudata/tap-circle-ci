@@ -25,7 +25,7 @@ def get_bookmark(state: dict, project: str, stream_name: str, bookmark_key: str)
 
 def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict, options: dict = {}) -> dict:
     """
-    https://circleci.com/docs/api/v2/#get-all-pipelines
+    https://circleci.com/docs/api/v2/#operation/listPipelines
     """
     bookmark = get_bookmark(state, project, "pipelines", "since")
     if bookmark:
