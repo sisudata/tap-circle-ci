@@ -144,7 +144,12 @@ def get_all_jobs_for_workflow(
     for job in get_all_items('jobs', job_url):
 
         # add in workflow_id and pipeline_id
-        job.update({'_pipeline_id': pipeline_id, '_workflow_id': workflow_id})
+        job.update({
+            '_pipeline_id': pipeline_id,
+            '_workflow_id': workflow_id,
+            'pipeline_id': pipeline_id,
+            'workflow_id': workflow_id,
+        })
 
         # Transform and write
         with singer.Transformer() as transformer:
@@ -189,8 +194,15 @@ def get_all_steps_for_job(
         for idx, step in enumerate(build["steps"]):
 
             # add in workflow_id, pipeline_id and job_id
-            step.update({'_pipeline_id': pipeline_id, '_workflow_id': workflow_id,
-                         '_job_id': workflow_id, '_index': idx})
+            step.update({
+                '_pipeline_id': pipeline_id,
+                '_workflow_id': workflow_id,
+                '_job_id': workflow_id,
+                'pipeline_id': pipeline_id,
+                'workflow_id': workflow_id,
+                'job_id': workflow_id,
+                '_index': idx
+            })
 
             # Transform and write
             with singer.Transformer() as transformer:
