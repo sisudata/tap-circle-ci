@@ -131,11 +131,10 @@ This tap:
 
 Detailed configuration information for the `--config` key.
 
-| key                | type      | default | description                                                                                     |
-| ------------------ | --------- | ------- | ----------------------------------------------------------------------------------------------- |
-| `token`            | `string`  | `N/A`   | [Personal API Token](https://circleci.com/account/api)                                          |
-| `project_slugs`    | `string`  | `N/A`   | Space ` ` delimited string of CCI project slugs                                                 |
-| `time_buffer_mins` | `integer` | 7 days  | A buffer to offset when we start syncing `pipelines` to prevent syncing in progress `pipelines` |
+| key             | type     | default | description                                            |
+| --------------- | -------- | ------- | ------------------------------------------------------ |
+| `token`         | `string` | `N/A`   | [Personal API Token](https://circleci.com/account/api) |
+| `project_slugs` | `string` | `N/A`   | Space ` ` delimited string of CCI project slugs        |
 
 ---
 
