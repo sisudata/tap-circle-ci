@@ -99,7 +99,8 @@ def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict, 
     for pipeline in get_all_pipelines_while_bookmark(project, bookmark_time):
         # grab all workflows for this pipeline
         workflow_extraction_time = singer.utils.now()
-        workflows = list(get_all_workflows_for_pipeline(pipeline.get("id")))
+        workflows = get_all_workflows_for_pipeline(pipeline.get("id"))
+        LOGGER.info(f"workflows size: {get_size(workflows)}, {len(workflows)}")
 
         # We terminate extracting once we come across currently running pipelines
         if not pipeline_is_completed(workflows):
@@ -148,10 +149,10 @@ def get_all_workflows_for_pipeline(
     """
     https://circleci.com/docs/api/v2/#operation/listWorkflowsByPipelineId
     """
-    workflow_url = f"https://circleci.com/api/v2/pipeline/{pipeline_id}/workflow"
-
-    for workflow in get_all_items('workflows', workflow_url):
-        yield workflow
+    return list(get_all_items(
+        'workflows',
+        f"https://circleci.com/api/v2/pipeline/{pipeline_id}/workflow"
+    ))
 
 
 def emit_all_workflows_for_pipeline(
