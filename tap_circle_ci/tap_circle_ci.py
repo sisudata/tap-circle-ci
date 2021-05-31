@@ -40,9 +40,8 @@ def discover() -> singer.catalog.Catalog:
 
     for schema_name, schema in raw_schemas.items():
 
-        # TODO: populate any metadata and stream's key properties here..
+        # TODO: populate any metadata here..
         stream_metadata = []
-        stream_key_properties = []
 
         # create and add catalog entry
         catalog_entry = {
