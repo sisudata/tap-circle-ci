@@ -1,4 +1,3 @@
-import sys
 from typing import List, Optional
 
 import singer
@@ -25,30 +24,6 @@ def pipeline_is_completed(workflows):
     return not running_workflows
 
 
-def get_size(obj, seen=None):
-    """
-    Recursively finds size of objects
-    https://gist.githubusercontent.com/bosswissam/a369b7a31d9dcab46b4a034be7d263b2/raw/f99d210019c1fac6bb46d2da81dcdf5ef9932172/pysize.py
-    """
-    size = sys.getsizeof(obj)
-    if seen is None:
-        seen = set()
-    obj_id = id(obj)
-    if obj_id in seen:
-        return 0
-    # Important mark as seen *before* entering recursion to gracefully handle
-    # self-referential objects
-    seen.add(obj_id)
-    if isinstance(obj, dict):
-        size += sum([get_size(v, seen) for v in obj.values()])
-        size += sum([get_size(k, seen) for k in obj.keys()])
-    elif hasattr(obj, '__dict__'):
-        size += get_size(obj.__dict__, seen)
-    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
-        size += sum([get_size(i, seen) for i in obj])
-    return size
-
-
 def get_all_pipelines_while_bookmark(project, bookmark_time):
     """
     Return all pipelines, in ascending order of updated_at, which are
@@ -60,7 +35,6 @@ def get_all_pipelines_while_bookmark(project, bookmark_time):
     # Pipelines are ordered updated_at desc, so we reverse the list
     pipelines = []
     for pipeline in get_all_items('pipelines', pipeline_url):
-        LOGGER.info(f"pipeline size: {get_size(pipeline)}")
         pipeline_updated_at = singer.utils.strptime_to_utc(
             pipeline.get('updated_at'))
 
@@ -71,8 +45,6 @@ def get_all_pipelines_while_bookmark(project, bookmark_time):
             break
 
         pipelines.append(pipeline)
-
-    LOGGER.info(f"pipelines size: {get_size(pipelines)}, {len(pipelines)}")
 
     return pipelines[::-1]
 
@@ -100,7 +72,6 @@ def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict, 
         # grab all workflows for this pipeline
         workflow_extraction_time = singer.utils.now()
         workflows = get_all_workflows_for_pipeline(pipeline.get("id"))
-        LOGGER.info(f"workflows size: {get_size(workflows)}, {len(workflows)}")
 
         # We terminate extracting once we come across currently running pipelines
         if not pipeline_is_completed(workflows):
