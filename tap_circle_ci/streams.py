@@ -9,9 +9,6 @@ from tap_circle_ci.client import get_all_items
 
 LOGGER = singer.get_logger()
 
-# We leave a week offset for currently running pipelines
-TIME_BUFFER_FOR_RUNNING_PIPELINES = datetime.timedelta(days=7)
-
 
 def get_bookmark(state: dict, project: str, stream_name: str, bookmark_key: str) -> Optional[str]:
     """
@@ -24,8 +21,33 @@ def get_bookmark(state: dict, project: str, stream_name: str, bookmark_key: str)
 
 
 def pipeline_is_completed(workflows):
-    running_workflows = [True for w in workflows if not w['stopped_at']]
+    running_workflows = [True for w in workflows if not w.get('stopped_at')]
     return not running_workflows
+
+
+def get_all_pipelines_while_bookmark(project, bookmark_time):
+    """
+    Return all pipelines, in ascending order of updated_at, which are
+    updated_at _after_ the bookmark_time. If bookmark_time is None, return
+    all fetchable pipelines.
+    """
+    pipeline_url = f'https://circleci.com/api/v2/project/{project}/pipeline'
+
+    # Pipelines are ordered updated_at desc, so we reverse the list
+    pipelines = []
+    for pipeline in get_all_items('pipelines', pipeline_url):
+        pipeline_updated_at = singer.utils.strptime_to_utc(
+            pipeline.get('updated_at'))
+
+        # We avoid extracting if the updated time of the pipeline is less than our bookmark_time
+        # ie, we can fast forward though those pipelines we know we have persisted before
+        # additionally, we can terminate the get_all_items generator once we reach our bookmark
+        if bookmark_time is not None and pipeline_updated_at < bookmark_time:
+            break
+
+        pipelines.append(pipeline)
+
+    return pipelines[::-1]
 
 
 def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict, options: dict = {}) -> dict:
@@ -38,7 +60,6 @@ def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict, 
     else:
         bookmark_time = None
 
-    pipeline_url = f'https://circleci.com/api/v2/project/{project}/pipeline'
     pipeline_counter = metrics.record_counter('pipelines')
     workflow_counter = metrics.record_counter(
         'workflows') if schemas.get('workflows') else None
@@ -48,26 +69,10 @@ def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict, 
         'steps') if schemas.get('steps') else None
     extraction_time = singer.utils.now()
 
-    updated_at = None
-
-    # Pipelines are ordered updated_at desc
-    for pipeline in get_all_items('pipelines', pipeline_url):
+    for pipeline in get_all_pipelines_while_bookmark(project, bookmark_time):
         # grab all workflows for this pipeline
         workflow_extraction_time = singer.utils.now()
-        workflows = get_all_workflows_for_pipeline(
-            schemas,
-            pipeline.get("id"),
-            metadata
-        )
-
-        pipeline_updated_at = singer.utils.strptime_to_utc(pipeline['updated_at'])
-        # We set the updated_at to be the first pipeline[updated_at] to serve as a temporary bookmark
-        if updated_at is None:
-            updated_at = pipeline_updated_at
-
-        # We avoid extracting if the updated time of the pipeline is less than our bookmark_time
-        if bookmark_time is not None and pipeline_updated_at < bookmark_time:
-            continue
+        workflows = list(get_all_workflows_for_pipeline(pipeline.get("id")))
 
         # We terminate extracting once we come across currently running pipelines
         if not pipeline_is_completed(workflows):
@@ -82,50 +87,49 @@ def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict, 
             )
         singer.write_record('pipelines', record,
                             time_extracted=extraction_time)
-        updated_at = min(updated_at, pipeline_updated_at)
+        bookmark_time = singer.utils.strptime_to_utc(
+            pipeline.get('updated_at'))
         pipeline_counter.increment()
 
-        emit_all_workflows_for_pipeline(
-            schemas,
-            pipeline.get("id"),
-            project,
-            workflow_extraction_time,
-            workflows,
-            workflow_counter,
-            job_counter,
-            step_counter
-        )
+        # If workflows are selected, emit all of the pre-fetched workflows for this pipeline
+        if schemas.get('workflows'):
+            emit_all_workflows_for_pipeline(
+                schemas,
+                pipeline.get("id"),
+                workflow_extraction_time,
+                workflows,
+                metadata,
+                workflow_counter,
+                job_counter,
+                step_counter
+            )
 
     # Update bookmarks after extraction
-    singer.write_bookmark(state, project, 'pipelines', {
-                          'since': singer.utils.strftime(updated_at)})
+    singer.write_bookmark(
+        state,
+        project,
+        'pipelines',
+        {'since': bookmark_time and singer.utils.strftime(bookmark_time)}
+    )
 
     return state
 
 
 def get_all_workflows_for_pipeline(
-    schemas: dict,
-    pipeline_id: str,
-    metadata: dict
+    pipeline_id: str
 ) -> dict:
     """
     https://circleci.com/docs/api/v2/#operation/listWorkflowsByPipelineId
     """
     workflow_url = f"https://circleci.com/api/v2/pipeline/{pipeline_id}/workflow"
 
-    with singer.Transformer() as transformer:
-        for workflow in get_all_items('workflows', workflow_url):
-            yield transformer.transform(
-                workflow,
-                schemas['workflows'].to_dict(),
-                metadata=metadata_lib.to_map(metadata['workflows'])
-            )
+    for workflow in get_all_items('workflows', workflow_url):
+        yield workflow
 
 
 def emit_all_workflows_for_pipeline(
     schemas: dict,
     pipeline_id: str,
-    project: str,
     extraction_time: str,
     workflows: list,
     metadata: dict,
@@ -137,8 +141,17 @@ def emit_all_workflows_for_pipeline(
         workflow_counter = metrics.record_counter('workflows')
 
     for workflow in workflows:
-        singer.write_record('workflows', workflow,
-                            time_extracted=extraction_time)
+        with singer.Transformer() as transformer:
+            record = transformer.transform(
+                workflow,
+                schemas['workflows'].to_dict(),
+                metadata=metadata_lib.to_map(metadata['workflows'])
+            )
+        singer.write_record(
+            'workflows',
+            record,
+            time_extracted=extraction_time
+        )
         workflow_counter.increment()
 
         # If jobs are selected, grab all the jobs for this workflow
@@ -147,7 +160,6 @@ def emit_all_workflows_for_pipeline(
                 schemas,
                 pipeline_id,
                 workflow,
-                project,
                 metadata,
                 job_counter,
                 step_counter

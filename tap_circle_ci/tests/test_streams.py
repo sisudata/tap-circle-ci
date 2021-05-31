@@ -33,7 +33,7 @@ def _generate_random_field(field: str) -> Union[str, int, bool]:
 
 def generate_data_from_schema(schema: dict, num_shots: int, start_time: datetime.datetime) -> List[dict]:
     time_copy = copy.deepcopy(start_time)
-    return [_generate_single_data_point(schema, time_copy + datetime.timedelta(hours=i)) for i in range(num_shots)]
+    return [_generate_single_data_point(schema, time_copy + datetime.timedelta(hours=i)) for i in range(num_shots)][::-1]
 
 def non_null_schema_types(schema):
     types = None
@@ -73,7 +73,7 @@ def pageify_sub_stream_data_points(num_parent_streams: int, sub_stream_data_poin
     pages = []
     for i in range(num_parent_streams):
         end_slice =  (i + 1) * num_sub_points_per_parent if i < num_parent_streams - 1 else len(sub_stream_data_points)
-        pages.append(pageify_data_points(sub_stream_data_points[i * num_sub_points_per_parent:end_slice], page_limit))
+        pages += pageify_data_points(sub_stream_data_points[i * num_sub_points_per_parent:end_slice], page_limit)
     return pages
 
 
@@ -94,15 +94,26 @@ def test_get_pipelines_without_cutoff():
     catalog = discover()
     schema = {'pipelines': next(s.schema for s in catalog.streams if s.tap_stream_id == 'pipelines')}
     metadata = {'pipelines': next(s.metadata for s in catalog.streams if s.tap_stream_id == 'pipelines')}
-    fake_pipelines = generate_data_from_schema(raw_schema, 50, singer.utils.now() - 2 * TIME_BUFFER_FOR_RUNNING_PIPELINES)
+    fake_pipelines = generate_data_from_schema(
+        raw_schema,
+        50,
+        singer.utils.now()
+    )
+    fake_workflows = generate_data_from_schema(
+        raw_schemas['workflows'],
+        300,
+        singer.utils.now()
+    )
     pipeline_pages = pageify_data_points(fake_pipelines, 30)
-    pipeline_responses = turn_pages_into_mocks(pipeline_pages)
+    workflow_pages = pageify_sub_stream_data_points(50, fake_workflows, 3)
+    all_responses = turn_pages_into_mocks(pipeline_pages + workflow_pages)
+
     with mock.patch('tap_circle_ci.client.get_session') as gs, \
             mock.patch('singer.metrics.log'), \
             mock.patch('singer.metrics.record_counter') as rc:
             fake_session = mock.create_autospec(requests.Session())
             fake_session.headers = {}
-            fake_session.request.side_effect = pipeline_responses
+            fake_session.request.side_effect = all_responses
             gs.return_value = fake_session
             mock_rc = mock.Mock()
             mock_rc.increment.return_value = None
@@ -111,7 +122,7 @@ def test_get_pipelines_without_cutoff():
     assert mock_rc.increment.call_count == 50
 
 
-def test_get_pipelines_with_cutoff():
+def test_get_pipelines_with_bookmark():
     raw_schemas = load_schemas()
     raw_schema = raw_schemas['pipelines']
     catalog = discover()
@@ -120,21 +131,33 @@ def test_get_pipelines_with_cutoff():
     fake_pipelines = generate_data_from_schema(
         raw_schema,
         50,
-        singer.utils.now() - TIME_BUFFER_FOR_RUNNING_PIPELINES - datetime.timedelta(hours=24)
+        singer.utils.now() - datetime.timedelta(hours=24)
     )
-    pipeline_pages = pageify_data_points(fake_pipelines, 30)
-    pipeline_responses = turn_pages_into_mocks(pipeline_pages)
+    fake_workflows = generate_data_from_schema(
+        raw_schemas['workflows'],
+        300,
+        singer.utils.now()
+    )
+    pipeline_pages = pageify_data_points(fake_pipelines, 100)
+    workflow_pages = pageify_sub_stream_data_points(50, fake_workflows, 3)
+    all_responses = turn_pages_into_mocks(pipeline_pages + workflow_pages)
+
     with mock.patch('tap_circle_ci.client.get_session') as gs, \
             mock.patch('singer.metrics.log'), \
             mock.patch('singer.metrics.record_counter') as rc:
             fake_session = mock.create_autospec(requests.Session())
             fake_session.headers = {}
-            fake_session.request.side_effect = pipeline_responses
+            fake_session.request.side_effect = all_responses
             gs.return_value = fake_session
             mock_rc = mock.Mock()
             mock_rc.increment.return_value = None
             rc.return_value = mock_rc
-            get_all_pipelines(schema, "fake_project", {}, metadata)
+            get_all_pipelines(
+                schema,
+                "fake_project",
+                {"bookmarks": {"fake_project": {"pipelines": {"since": singer.utils.strftime(singer.utils.now())}}}},
+                metadata
+            )
     assert mock_rc.increment.call_count == 25
 
 
@@ -152,23 +175,17 @@ def test_get_pipelines_and_workflows():
     fake_pipelines = generate_data_from_schema(
         raw_schemas['pipelines'],
         50,
-        singer.utils.now() - TIME_BUFFER_FOR_RUNNING_PIPELINES - datetime.timedelta(hours=50)
+        singer.utils.now() - datetime.timedelta(hours=50)
     )
     fake_workflows = generate_data_from_schema(
         raw_schemas['workflows'],
         300,
-        singer.utils.now() - TIME_BUFFER_FOR_RUNNING_PIPELINES - datetime.timedelta(hours=50)
+        singer.utils.now() - datetime.timedelta(hours=50)
     )
     pipeline_pages = pageify_data_points(fake_pipelines, 30)
-    pipeline_responses = turn_pages_into_mocks(pipeline_pages)
     workflow_pages = pageify_sub_stream_data_points(50, fake_workflows, 3)
-    workflow_responses = [turn_pages_into_mocks(w) for w in workflow_pages]
-    all_responses = []
-    for i, pipeline in enumerate(pipeline_responses):
-        all_responses.append(pipeline)
-        end_slice = len(workflow_responses) if i == len(pipeline_responses) - 1 else (i + 1) * 30
-        for j in range(i * 30, end_slice):
-            all_responses.extend(workflow_responses[j])
+    all_responses = turn_pages_into_mocks(pipeline_pages + workflow_pages)
+
     with mock.patch('tap_circle_ci.client.get_session') as gs, \
         mock.patch('singer.metrics.log'), \
         mock.patch('singer.metrics.record_counter') as rc:
