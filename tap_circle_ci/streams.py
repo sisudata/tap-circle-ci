@@ -54,9 +54,6 @@ def get_all_pipelines_while_bookmark(project, state):
     all fetchable pipelines.
     """
     bookmark = get_bookmark(state, project)
-    # We immediately write the bookmark _back_ to make state management simpler downstream
-    # ie, if we don't end up parsing _any_ pipelines, we still emit the state we were given
-    state = write_bookmark(state, project, bookmark)
 
     pipeline_url = f'https://circleci.com/api/v2/project/{project}/pipeline'
 
