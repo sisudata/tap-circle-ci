@@ -1,5 +1,10 @@
 # tap-circle-ci
 
+## Motivation
+This fork improves the tap to handle edge cases that cause errors.
+- Edge Case: Job is cancelled and build number is not created, causing a 404 error when requesting unknown build number.
+
+## About
 This is a [Singer](https://singer.io) tap that produces JSON-formatted data
 following the [Singer
 spec](https://github.com/singer-io/getting-started/blob/master/SPEC.md).
