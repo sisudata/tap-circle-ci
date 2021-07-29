@@ -21,6 +21,8 @@ def get_abs_path(path: str) -> str:
 
 # Load schemas from schemas folder
 
+# Returns a map with key type, value json
+
 
 def load_schemas() -> dict:
     schemas = {}
@@ -146,7 +148,8 @@ def sync_single_project(project: str, state: dict, catalog: singer.catalog.Catal
                                             sub_stream.key_properties)
 
             # sync stream and it's sub streams
-            state = sync_func(stream_schemas, project, state, all_metadata, options)
+            state = sync_func(stream_schemas, project,
+                              state, all_metadata, options)
             singer.write_state(state)
 
 

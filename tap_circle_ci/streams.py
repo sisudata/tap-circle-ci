@@ -249,6 +249,12 @@ def get_all_steps_for_job(
     build_num = job.get("job_number")
 
     build_url = f"https://circleci.com/api/v1.1/project/{slug}/{build_num}"
+    LOGGER.debug(build_url)
+
+    # Prevent 404 if build_num doesn't exist
+    if build_num is None:
+        return
+
     extraction_time = singer.utils.now()
     for build in get_all_items('steps', build_url):
         for idx, step in enumerate(build["steps"]):
