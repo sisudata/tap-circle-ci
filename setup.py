@@ -20,7 +20,7 @@ setup(
         ]},
     entry_points="""
     [console_scripts]
-    tap-circle-ci=tap_circle_ci:main
+    tap-circleci=tap_circle_ci:main
     """,
     packages=["tap_circle_ci"],
     package_data={
