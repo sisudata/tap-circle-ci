@@ -1,4 +1,4 @@
-# tap-circle-ci
+# tap-circleci
 
 ## Motivation
 This fork improves the tap to handle edge cases that cause errors.
