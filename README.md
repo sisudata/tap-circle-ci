@@ -1,6 +1,6 @@
 # tap-circleci
 
-## Meltano tap-circleci Quick Setup
+## Meltano Extractor Setup
 
 ```
 meltano add extractor --custom tap-circleci
