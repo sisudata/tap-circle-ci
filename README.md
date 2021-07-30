@@ -1,10 +1,25 @@
 # tap-circleci
 
-## Motivation
+## Meltano tap-circleci Quick Setup
+
+```
+meltano add extractor --custom tap-circleci
+```
+In the interactive portion, use these variables
+```
+name: tap-circleci
+pypi: git+https://github.com/JChouCode/tap-circleci.git
+executable: tap-circleci
+capabilities: discover,catalog,state
+config: project_slugs,token:password
+```
+
+## Improvements
 This fork improves the tap to handle edge cases that cause errors.
 - Edge Case: Job is cancelled and build number is not created, causing a 404 error when requesting unknown build number.
+- Improved Bookmarking
 
-## About
+## Sisu Data - About
 This is a [Singer](https://singer.io) tap that produces JSON-formatted data
 following the [Singer
 spec](https://github.com/singer-io/getting-started/blob/master/SPEC.md).
