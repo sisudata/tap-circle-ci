@@ -94,7 +94,7 @@ def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict, 
 
         # We terminate extracting once we come across currently running pipelines
         if not pipeline_is_completed(workflows):
-            continue
+            break
 
         # Transform and write record
         with singer.Transformer() as transformer:
