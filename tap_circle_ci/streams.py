@@ -4,7 +4,7 @@ import singer
 import singer.metadata as metadata_lib
 import singer.bookmarks as bookmarks
 import singer.metrics as metrics
-from tap_circle_ci.client import get_all_items
+from tap_circle_ci.client import NotFoundException, get_all_items
 
 LOGGER = singer.get_logger()
 
@@ -90,7 +90,7 @@ def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict, 
     for pipeline in get_all_pipelines_while_bookmark(project, state):
         # grab all workflows for this pipeline
         workflow_extraction_time = singer.utils.now()
-        workflows = get_all_workflows_for_pipeline(pipeline.get("id"))
+        workflows = get_all_workflows_for_pipeline(pipeline)
 
         # We terminate extracting once we come across currently running pipelines
         if not pipeline_is_completed(workflows):
@@ -128,15 +128,19 @@ def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict, 
 
 
 def get_all_workflows_for_pipeline(
-    pipeline_id: str
+    pipeline
 ) -> dict:
     """
     https://circleci.com/docs/api/v2/#operation/listWorkflowsByPipelineId
     """
-    return list(get_all_items(
-        'workflows',
-        f"https://circleci.com/api/v2/pipeline/{pipeline_id}/workflow"
-    ))
+    try:
+        return list(get_all_items(
+            'workflows',
+            f"https://circleci.com/api/v2/pipeline/{pipeline.get('id')}/workflow"
+        ))
+    except NotFoundException:
+        LOGGER.warn(f'Pipeline not found (probably aged out): {pipeline}')
+        return []
 
 
 def emit_all_workflows_for_pipeline(
