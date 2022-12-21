@@ -139,7 +139,7 @@ def get_all_workflows_for_pipeline(
             f"https://circleci.com/api/v2/pipeline/{pipeline.get('id')}/workflow"
         ))
     except NotFoundException:
-        LOGGER.warn(f'Pipeline not found (probably aged out): {pipeline}')
+        LOGGER.warning(f'Pipeline not found (probably aged out): {pipeline}')
         return []
 
 
