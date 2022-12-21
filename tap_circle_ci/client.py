@@ -1,4 +1,5 @@
 from requests import Session
+import json
 import singer
 import singer.metrics as metrics
 
@@ -40,15 +41,22 @@ def get(source: str, url: str, headers: dict = {}):
     """
     Get a single page from the provided url
     """
+
     with metrics.http_request_timer(source) as timer:
         get_session().headers.update(headers)
         resp = get_session().request(method='get', url=url)
+
+        details = {
+            'args': {'source': source, 'url': url, 'headers': headers},
+            'response.text': resp.text
+        }
+
         if resp.status_code == 401:
-            raise AuthException(resp.text)
+            raise AuthException(json.dumps(details))
         if resp.status_code == 403:
-            raise AuthException(resp.text)
+            raise AuthException(json.dumps(details))
         if resp.status_code == 404:
-            raise NotFoundException(resp.text)
+            raise NotFoundException(json.dumps(details))
 
         timer.tags[metrics.Tag.http_status_code] = resp.status_code
         return resp
