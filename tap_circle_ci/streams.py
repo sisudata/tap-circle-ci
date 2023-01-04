@@ -67,9 +67,22 @@ def get_all_pipelines_while_bookmark(project, state):
         # ie, we can fast forward though those pipelines we know we have persisted before
         # additionally, we can terminate the get_all_items generator once we reach our bookmark
         if bookmark is not None and pipeline_updated_at < bookmark:
+            LOGGER.info(
+                f'get_all_pipelines_while_bookmark: Pipeline updated before bookmark:: {pipeline_updated_at} < {bookmark}'
+            )
             break
 
         pipelines.append(pipeline)
+
+    if pipelines:
+        LOGGER.info(
+            f"get_all_pipelines_while_bookmark: Found {len(pipelines)}, {pipelines[-1].get('updated_at')} -> {pipelines[0].get('updated_at')}"
+        )
+    else:
+        LOGGER.info(
+            f"get_all_pipelines_while_bookmark: Found no pipelines..."
+        )
+
 
     return pipelines[::-1]
 
@@ -94,6 +107,7 @@ def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict, 
 
         # We terminate extracting once we come across currently running pipelines
         if not pipeline_is_completed(workflows):
+            LOGGER.warning(f'get_all_pipelines: Found currently running pipelines at {pipeline} len(workflows): {len(workflows)}')
             break
 
         # Transform and write record
