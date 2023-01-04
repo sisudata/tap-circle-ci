@@ -107,7 +107,7 @@ def get_all_pipelines(schemas: dict, project: str, state: dict, metadata: dict, 
 
         # We terminate extracting once we come across currently running pipelines
         if not pipeline_is_completed(workflows):
-            LOGGER.warning(f'get_all_pipelines: Found currently running pipelines at {pipeline}')
+            LOGGER.warning(f'get_all_pipelines: Found currently running pipelines at {pipeline} len(workflows): {len(workflows)}')
             break
 
         # Transform and write record
