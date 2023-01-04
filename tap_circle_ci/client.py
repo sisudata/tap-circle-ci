@@ -3,6 +3,7 @@ import json
 import singer
 import singer.metrics as metrics
 
+LOGGER = singer.get_logger()
 
 _session = Session()
 # wrapper to make mocking easier
@@ -63,8 +64,12 @@ def get(source: str, url: str, headers: dict = {}):
 
 
 def get_all_pages(source: str, url: str, headers: dict = {}):
+    counter = 0
     temp_url = str(url)
     while True:
+        LOGGER.info(f'get_all_pages: Paginating({counter}): {source}')
+        counter += 1
+
         r = get(source, temp_url, headers)
         r.raise_for_status()
         data = r.json()
