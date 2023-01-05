@@ -25,7 +25,7 @@ def post(url):
 
 def get_all_pipelines(project_slug, last_page, start, end):
     formatted_page = last_page
-    yielded = 0
+    last_updated_at = None
     while True:
         response = get(
             f'https://circleci.com/api/v2/project/{project_slug}/pipeline{formatted_page}'
@@ -36,11 +36,11 @@ def get_all_pipelines(project_slug, last_page, start, end):
                 return None
             if end > pipeline['updated_at']:
                 yield pipeline
-            yielded = pipeline['updated_at']
+            last_updated_at = pipeline['updated_at']
 
         if response.get('next_page_token'):
             formatted_page = f"?page-token={response.get('next_page_token')}"
-            print(f'get_all_pipelines: Fetching next page... {yielded}')
+            print(f'get_all_pipelines: Fetching next page... {last_updated_at}')
         else:
             return None
 
@@ -50,7 +50,6 @@ def get_all_workflows(pipeline):
     https://circleci.com/docs/api/v2/#operation/listWorkflowsByPipelineId
     """
     formatted_page = ''
-    yielded = 0
     while True:
         response = get(
             f'https://circleci.com/api/v2/pipeline/{pipeline["id"]}/workflow{formatted_page}'
@@ -61,7 +60,7 @@ def get_all_workflows(pipeline):
 
         if response.get('next_page_token'):
             formatted_page = f"?page-token={response.get('next_page_token')}"
-            print(f'get_all_workflows: Fetching next page... {yielded}')
+            print(f'get_all_workflows: Fetching next page... {formatted_page}')
         else:
             return None
 
