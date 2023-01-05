@@ -18,6 +18,7 @@ config: project_slugs,token:password
 This fork improves the tap to handle edge cases that cause errors.
 - Edge Case: Job is cancelled and build number is not created, causing a 404 error when requesting unknown build number.
 - Improved Bookmarking
+- Added `tooling/` for various scripts which help wrangle some of the sharp corners of CircleCI
 
 ## Sisu Data - About
 This is a [Singer](https://singer.io) tap that produces JSON-formatted data
