@@ -217,7 +217,6 @@ def get_all_jobs_for_workflow(
 
     workflow_id = workflow.get("id")
     slug = workflow.get("project_slug")
-    build_num = job.get("job_number")
 
     if job_counter is None:
         job_counter = metrics.record_counter('jobs')
@@ -225,9 +224,12 @@ def get_all_jobs_for_workflow(
     jobs_url = f"https://circleci.com/api/v2/workflow/{workflow_id}/job"
     extraction_time = singer.utils.now()
     for job in get_all_items('jobs', jobs_url):
-        job_url = f"https://circleci.com/api/v2/project/{slug}/job/{build_num}"
+        build_num = job.get("job_number")
+        job_details = {}
 
-        job_details = get_single_entry('job', job_url)
+        if build_num:
+            job_url = f"https://circleci.com/api/v2/project/{slug}/job/{build_num}"
+            job_details = get_single_entry('job', job_url).json()
 
         # add in workflow_id and pipeline_id
         job.update({
