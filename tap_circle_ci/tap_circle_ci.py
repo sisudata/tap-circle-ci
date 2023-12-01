@@ -8,17 +8,22 @@ import singer
 from singer import utils, metadata
 
 from tap_circle_ci.streams import (TOP_LEVEL_STREAM_ID_TO_FUNCTION,
-                                                            STREAM_ID_TO_SUB_STREAM_IDS,
-                                                            validate_stream_dependencies)
+                                   STREAM_ID_TO_SUB_STREAM_IDS,
+                                   validate_stream_dependencies)
 from tap_circle_ci.client import add_authorization_header
 
 REQUIRED_CONFIG_KEYS = ["token", "project_slugs"]
 LOGGER = singer.get_logger()
 
+
 def get_abs_path(path: str) -> str:
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
 
 # Load schemas from schemas folder
+
+# Returns a map with key type, value json
+
+
 def load_schemas() -> dict:
     schemas = {}
 
@@ -30,27 +35,28 @@ def load_schemas() -> dict:
 
     return schemas
 
+
 def discover() -> singer.catalog.Catalog:
     raw_schemas = load_schemas()
     streams = []
 
     for schema_name, schema in raw_schemas.items():
 
-        # TODO: populate any metadata and stream's key properties here..
+        # TODO: populate any metadata here..
         stream_metadata = []
-        stream_key_properties = []
 
         # create and add catalog entry
         catalog_entry = {
             'stream': schema_name,
             'tap_stream_id': schema_name,
             'schema': schema,
-            'metadata' : [],
-            'key_properties': []
+            'metadata': [],
+            'key_properties': schema.get('required', [])
         }
         streams.append(catalog_entry)
 
     return singer.catalog.Catalog.from_dict({'streams': streams})
+
 
 def get_selected_streams(catalog: singer.catalog.Catalog) -> list:
     '''
@@ -76,7 +82,8 @@ def extract_sub_stream_ids(stream_id: str) -> List[str]:
     Get all children, grandchildren, etc.
     """
     if stream_id in STREAM_ID_TO_SUB_STREAM_IDS:
-        next_level_streams = [sub_id for sub_id in STREAM_ID_TO_SUB_STREAM_IDS[stream_id]]
+        next_level_streams = [
+            sub_id for sub_id in STREAM_ID_TO_SUB_STREAM_IDS[stream_id]]
         # Recurse
         lowel_level_streams = []
         for sub_id in next_level_streams:
@@ -94,10 +101,10 @@ def sync(config: dict, state: dict, catalog: dict) -> None:
     add_authorization_header(config['token'])
     for project in projects:
         LOGGER.info(f'Syncing project {project}')
-        sync_single_project(project, state, catalog)
+        sync_single_project(project, state, catalog, config)
 
 
-def sync_single_project(project: str, state: dict, catalog: singer.catalog.Catalog) -> None:
+def sync_single_project(project: str, state: dict, catalog: singer.catalog.Catalog, options: dict) -> None:
     """
     Sync a single project's streams
     """
@@ -116,30 +123,34 @@ def sync_single_project(project: str, state: dict, catalog: singer.catalog.Catal
             # if stream is selected, write schema and sync
             stream_schema = stream.schema
             all_metadata = {stream_id: stream.metadata}
-            if stream_id in selected_stream_ids:
-                singer.write_schema(stream_id, stream_schema.to_dict(), stream.key_properties)
 
-                # get sync function and any sub streams
-                sync_func = TOP_LEVEL_STREAM_ID_TO_FUNCTION[stream_id]
-                sub_stream_ids = extract_sub_stream_ids(stream_id)
+            singer.write_schema(
+                stream_id, stream_schema.to_dict(), stream.key_properties)
 
-                # handle streams with sub streams
-                if len(sub_stream_ids) > 0:
-                    stream_schemas = {stream_id: stream_schema}
+            # get sync function and any sub streams
+            sync_func = TOP_LEVEL_STREAM_ID_TO_FUNCTION[stream_id]
+            sub_stream_ids = extract_sub_stream_ids(stream_id)
 
-                    # get and write selected sub stream schemas
-                    for sub_stream_id in sub_stream_ids:
-                        if sub_stream_id in selected_stream_ids:
-                            LOGGER.info(f'Syncing substream: {sub_stream_id} (descendent of {stream_id})')
-                            sub_stream = next(s for s in catalog.streams if s.tap_stream_id == sub_stream_id)
-                            stream_schemas[sub_stream_id] = sub_stream.schema
-                            all_metadata[sub_stream_id] = sub_stream.metadata
-                            singer.write_schema(sub_stream_id, sub_stream.schema.to_dict(),
-                                                sub_stream.key_properties)
+            # handle streams with sub streams
+            if len(sub_stream_ids) > 0:
+                stream_schemas = {stream_id: stream_schema}
 
-                # sync stream and it's sub streams
-                state = sync_func(stream_schemas, project, state, all_metadata)
-                singer.write_state(state)
+                # get and write selected sub stream schemas
+                for sub_stream_id in sub_stream_ids:
+                    if sub_stream_id in selected_stream_ids:
+                        LOGGER.info(
+                            f'Syncing substream: {sub_stream_id} (descendent of {stream_id})')
+                        sub_stream = next(
+                            s for s in catalog.streams if s.tap_stream_id == sub_stream_id)
+                        stream_schemas[sub_stream_id] = sub_stream.schema
+                        all_metadata[sub_stream_id] = sub_stream.metadata
+                        singer.write_schema(sub_stream_id, sub_stream.schema.to_dict(),
+                                            sub_stream.key_properties)
+
+            # sync stream and it's sub streams
+            state = sync_func(stream_schemas, project,
+                              state, all_metadata, options)
+            singer.write_state(state)
 
 
 @utils.handle_top_exception(LOGGER)
@@ -157,9 +168,10 @@ def main():
         if args.catalog:
             catalog = args.catalog
         else:
-            catalog =  discover()
+            catalog = discover()
 
         sync(args.config, args.state, catalog)
+
 
 if __name__ == "__main__":
     main()

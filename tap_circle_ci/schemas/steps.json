@@ -1,0 +1,81 @@
+{
+  "type": ["null", "object"],
+  "additionalProperties": false,
+  "properties": {
+    "_pipeline_id": {
+      "type": "string"
+    },
+    "_workflow_id": {
+      "type": "string"
+    },
+    "_job_id": {
+      "type": "string"
+    },
+    "pipeline_id": {
+      "type": "string"
+    },
+    "workflow_id": {
+      "type": "string"
+    },
+    "job_id": {
+      "type": "string"
+    },
+    "_index": {
+      "type": ["null", "integer"]
+    },
+    "name": {
+      "type": ["null", "string"]
+    },
+    "actions": {
+      "type": ["null", "array"],
+      "items": {
+        "type": ["null", "object"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": ["null", "string"]
+          },
+          "bash_command": {
+            "type": ["null", "string"]
+          },
+          "type": {
+            "type": ["null", "string"]
+          },
+          "status": {
+            "type": ["null", "string"]
+          },
+          "exit_code": {
+            "type": ["null", "integer"]
+          },
+          "failed": {
+            "type": ["null", "boolean"]
+          },
+          "infrastructure_fail": {
+            "type": ["null", "boolean"]
+          },
+          "timedout": {
+            "type": ["null", "boolean"]
+          },
+          "parallel": {
+            "type": ["null", "boolean"]
+          },
+          "step": {
+            "type": ["null", "integer"]
+          },
+          "index": {
+            "type": ["null", "integer"]
+          },
+          "start_time": {
+            "type": ["null", "string"],
+            "format": "date-time"
+          },
+          "end_time": {
+            "type": ["null", "string"],
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  },
+  "required": ["pipeline_id", "workflow_id", "job_id", "_index"]
+}

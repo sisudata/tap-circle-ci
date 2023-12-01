@@ -6,16 +6,28 @@
   "additionalProperties": false,
   "properties": {
     "_pipeline_id": {
-      "type": [
-        "null",
-        "string"
-      ]
+      "type": "string"
     },
     "_workflow_id": {
+      "type": "string"
+    },
+    "pipeline_id": {
+      "type": "string"
+    },
+    "workflow_id": {
+      "type": "string"
+    },
+    "contexts": {
       "type": [
         "null",
-        "string"
-      ]
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
     },
     "dependencies": {
       "type": [
@@ -29,6 +41,27 @@
         ]
       }
     },
+    "executor": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "resource_class": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
     "job_number": {
       "type": [
         "null",
@@ -36,10 +69,7 @@
       ]
     },
     "id": {
-      "type": [
-        "null",
-        "string"
-      ]
+      "type": "string"
     },
     "canceled_by": {
       "type": [
@@ -64,6 +94,12 @@
       "type": [
         "null",
         "string"
+      ]
+    },
+    "parallelism": {
+      "type": [
+        "null",
+        "integer"
       ]
     },
     "project_slug": {
@@ -91,5 +127,6 @@
       ],
       "format": "date-time"
     }
-  }
+  },
+  "required": ["pipeline_id", "workflow_id", "id"]
 }

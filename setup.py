@@ -2,7 +2,7 @@
 from setuptools import setup
 
 setup(
-    name="tap-circle-ci",
+    name="tap-circleci",
     version="0.1.0",
     description="Singer.io tap for extracting data from circle ci",
     author="Sisu Data",
@@ -11,13 +11,16 @@ setup(
     py_modules=["tap_circle_ci"],
     install_requires=[
         "singer-python>=5.0.12",
-        "requests",
-        "pytest",
-        "mock"
+        "requests"
     ],
+    extras_require={
+        'tests': [
+            "mock",
+            "pytest"
+        ]},
     entry_points="""
     [console_scripts]
-    tap-circle-ci=tap_circle_ci:main
+    tap-circleci=tap_circle_ci:main
     """,
     packages=["tap_circle_ci"],
     package_data={
